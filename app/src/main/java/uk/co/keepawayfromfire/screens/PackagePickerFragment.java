@@ -2,16 +2,16 @@ package uk.co.keepawayfromfire.screens;
 
 import android.app.ListFragment;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ListView;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+
+import nl.qbusict.cupboard.QueryResultIterable;
+
+import static nl.qbusict.cupboard.CupboardFactory.cupboard;
 
 public class PackagePickerFragment extends ListFragment {
 
@@ -21,11 +21,13 @@ public class PackagePickerFragment extends ListFragment {
     private boolean isTabletLayout;
     private int selectedItem;
 
+
+
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        PackageManager packageManager = getActivity().getPackageManager();
+        /*PackageManager packageManager = getActivity().getPackageManager();
 
         ArrayList<ApplicationInfo> acceptablePackages = new ArrayList<>();
         List<PackageInfo> allPackages = packageManager.getInstalledPackages(
@@ -35,9 +37,22 @@ public class PackagePickerFragment extends ListFragment {
             if (packageManager.getLaunchIntentForPackage(packageInfo.packageName) != null) {
                 acceptablePackages.add(packageInfo.applicationInfo);
             }
+        }*/
+
+        ArrayList<ApplicationSummary> acceptablePackages = new ArrayList<>();
+        QueryResultIterable<ApplicationSummary> itr = null;
+        try {
+            itr = cupboard()
+                    .withDatabase(ScreensApplication.getInstance().getAppDatabase().getWritableDatabase())
+                    .query(ApplicationSummary.class).query();
+            for (ApplicationSummary applicationSummary : itr) {
+                acceptablePackages.add(applicationSummary);
+            }
+        } finally {
+            if (itr != null) itr.close();
         }
 
-        Collections.sort(acceptablePackages, new ApplicationInfoSorter(packageManager));
+        Collections.sort(acceptablePackages, new ApplicationInfoSorter());
 
         if (savedInstanceState != null) {
             selectedItem = savedInstanceState.getInt("selectedItem", 0);
@@ -58,14 +73,14 @@ public class PackagePickerFragment extends ListFragment {
 
         getListView().setItemChecked(position, true);
 
-        ApplicationInfo applicationInfo = (ApplicationInfo) l.getItemAtPosition(position);
+        ApplicationSummary applicationSummary = (ApplicationSummary) l.getItemAtPosition(position);
 
         if (isTabletLayout) {
             if (listener != null)
-                listener.onAppInfoChanged(applicationInfo);
+                listener.onAppInfoChanged(applicationSummary);
         } else {
             Intent resultIntent = new Intent();
-            resultIntent.putExtra(INTENT_EXTRA_PACKAGE, applicationInfo);
+            resultIntent.putExtra(INTENT_EXTRA_PACKAGE, applicationSummary);
 
             getActivity().setResult(getActivity().RESULT_OK, resultIntent);
             getActivity().finish();
@@ -84,6 +99,6 @@ public class PackagePickerFragment extends ListFragment {
     }
 
     public interface AppInfoChangeListener {
-        void onAppInfoChanged(ApplicationInfo applicationInfo);
+        void onAppInfoChanged(ApplicationSummary applicationSummary);
     }
 }

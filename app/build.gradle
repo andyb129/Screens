@@ -13,4 +13,10 @@ android {
         resValue("string", "versionName", versionName)
         resValue("string", "version", "Version " + versionName)
     }
+
+    dependencies {
+        compile 'com.android.support:appcompat-v7:25.1.0'
+        compile 'com.android.support:design:25.1.0'
+        compile 'nl.qbusict:cupboard:2.2.0'
+    }
 }

@@ -1,7 +1,6 @@
 package uk.co.keepawayfromfire.screens;
 
 import android.content.Context;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,13 +14,13 @@ import java.util.ArrayList;
 /**
  * Created by cj on 19/11/16.
  */
-public class ApplicationInfoAdapter extends ArrayAdapter<ApplicationInfo> {
+public class ApplicationInfoAdapter extends ArrayAdapter<ApplicationSummary> {
 
     private final Context context;
     private final PackageManager packageManager;
-    private final ArrayList<ApplicationInfo> values;
+    private final ArrayList<ApplicationSummary> values;
 
-    public ApplicationInfoAdapter(Context context, ArrayList<ApplicationInfo> values) {
+    public ApplicationInfoAdapter(Context context, ArrayList<ApplicationSummary> values) {
         super(context, -1, values);
 
         this.context = context;
@@ -48,9 +47,10 @@ public class ApplicationInfoAdapter extends ArrayAdapter<ApplicationInfo> {
         }
 
         ViewHolder viewHolder = (ViewHolder) packageView.getTag();
-        viewHolder.iconImageView.setImageDrawable(values.get(position).loadIcon(packageManager));
-        viewHolder.nameTextView.setText(values.get(position).loadLabel(packageManager));
-        viewHolder.packageNameTextView.setText(values.get(position).packageName);
+        //TODO - fix the storage of icon
+        //viewHolder.iconImageView.setImageDrawable(values.get(position).getIcon());
+        viewHolder.nameTextView.setText(values.get(position).getLabel());
+        viewHolder.packageNameTextView.setText(values.get(position).getPackageName());
 
         return packageView;
     }

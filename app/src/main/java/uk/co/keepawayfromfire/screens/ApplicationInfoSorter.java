@@ -1,21 +1,12 @@
 package uk.co.keepawayfromfire.screens;
 
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-
 import java.util.Comparator;
 
-public class ApplicationInfoSorter implements Comparator<ApplicationInfo> {
-
-    private final PackageManager packageManager;
-
-    public ApplicationInfoSorter(PackageManager packageManager) {
-        this.packageManager = packageManager;
-    }
+public class ApplicationInfoSorter implements Comparator<ApplicationSummary> {
 
     @Override
-    public int compare(ApplicationInfo a1, ApplicationInfo a2) {
-        return a1.loadLabel(packageManager).toString().compareToIgnoreCase(
-                a2.loadLabel(packageManager).toString());
+    public int compare(ApplicationSummary a1, ApplicationSummary a2) {
+        return a1.getLabel().toString().compareToIgnoreCase(
+                a2.getLabel().toString());
     }
 }

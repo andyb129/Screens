@@ -1,34 +1,52 @@
 package uk.co.keepawayfromfire.screens;
 
-import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.PersistableBundle;
+import android.support.design.widget.Snackbar;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 
     public static final String ACTION_INSTALL_SHORTCUT = "com.android.launcher.action.INSTALL_SHORTCUT";
+    private static final int FIRST_APP_ICON = 1;
+    private static final int SECOND_APP_ICON = 2;
 
     private boolean isTabletLayout;
 
-    private ApplicationInfo package1;
-    private ApplicationInfo package2;
+    private ApplicationSummary package1;
+    private ApplicationSummary package2;
+    private ImageView quickPic1Button, quickPic2Button;
+    private View icon1, icon2;
+
+    private View.OnClickListener mPackagePickerApp1OnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            launchPackagePicker(view, R.id.package1View);
+        }
+    };
+
+    private View.OnClickListener mPackagePickerApp2OnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            launchPackagePicker(view, R.id.package2View);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main_new);
 
         isTabletLayout = findViewById(R.id.quickPic1Button) == null;
 
@@ -45,39 +63,30 @@ public class MainActivity extends Activity {
 
             a.setApplicationInfoLisener(new PackagePickerFragment.AppInfoChangeListener() {
                 @Override
-                public void onAppInfoChanged(ApplicationInfo applicationInfo) {
-                    package1 = applicationInfo;
+                public void onAppInfoChanged(ApplicationSummary applicationSummary) {
+                    package1 = applicationSummary;
 
                     updateUi();
                 }
             });
             b.setApplicationInfoLisener(new PackagePickerFragment.AppInfoChangeListener() {
                 @Override
-                public void onAppInfoChanged(ApplicationInfo applicationInfo) {
-                    package2 = applicationInfo;
+                public void onAppInfoChanged(ApplicationSummary applicationSummary) {
+                    package2 = applicationSummary;
 
                     updateUi();
                 }
             });
         } else {
-            final Button quickPic1Button = (Button) findViewById(R.id.quickPic1Button);
-            final Button quickPic2Button = (Button) findViewById(R.id.quickPic2Button);
+            quickPic1Button = (ImageView) findViewById(R.id.quickPic1Button);
+            quickPic2Button = (ImageView) findViewById(R.id.quickPic2Button);
+            icon1 = findViewById(R.id.package1View);
+            icon2 = findViewById(R.id.package2View);
 
-            quickPic1Button.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Intent intent = new Intent(view.getContext(), PackagePickerActivity.class);
-                    startActivityForResult(intent, R.id.package1View);
-                }
-            });
-
-            quickPic2Button.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Intent intent = new Intent(view.getContext(), PackagePickerActivity.class);
-                    startActivityForResult(intent, R.id.package2View);
-                }
-            });
+            quickPic1Button.setOnClickListener(mPackagePickerApp1OnClickListener);
+            quickPic2Button.setOnClickListener(mPackagePickerApp2OnClickListener);
+            icon1.setOnClickListener(mPackagePickerApp1OnClickListener);
+            icon2.setOnClickListener(mPackagePickerApp2OnClickListener);
         }
 
         final EditText nameEditText = (EditText) findViewById(R.id.nameEditText);
@@ -87,7 +96,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 if (package1 == null || package2 == null) {
-                    Toast.makeText(view.getContext(), "Please select two packages", Toast.LENGTH_SHORT).show();
+                    Snackbar.make(view, "Please select two packages", Snackbar.LENGTH_LONG).show();
                     return;
                 }
 
@@ -101,8 +110,8 @@ public class MainActivity extends Activity {
                                 R.drawable.logo));
                 installIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT,
                         ShortcutActivity.createShortcutIntent(view.getContext(),
-                                package1.packageName,
-                                package2.packageName
+                                package1.getPackageName(),
+                                package2.getPackageName()
                         ));
 
                 view.getContext().sendBroadcast(installIntent);
@@ -142,12 +151,14 @@ public class MainActivity extends Activity {
             return;
         }
 
-        ApplicationInfo applicationInfo = (ApplicationInfo) data.getParcelableExtra(PackagePickerFragment.INTENT_EXTRA_PACKAGE);
+        ApplicationSummary applicationSummary = (ApplicationSummary) data.getParcelableExtra(PackagePickerFragment.INTENT_EXTRA_PACKAGE);
 
         if (requestCode == R.id.package1View) {
-            package1 = applicationInfo;
+            setAddButtonVisibility(false, FIRST_APP_ICON);
+            package1 = applicationSummary;
         } else {
-            package2 = applicationInfo;
+            setAddButtonVisibility(false, SECOND_APP_ICON);
+            package2 = applicationSummary;
         }
 
         updateUi();
@@ -161,30 +172,43 @@ public class MainActivity extends Activity {
         outState.putParcelable("package2", package2);
     }
 
+    private void launchPackagePicker(View view, int package1View) {
+        Intent intent = new Intent(view.getContext(), PackagePickerActivity.class);
+        startActivityForResult(intent, package1View);
+    }
+
+    private void setAddButtonVisibility(boolean isVisible, int iconViewNumber) {
+        if (iconViewNumber==FIRST_APP_ICON) {
+            quickPic1Button.setVisibility(isVisible ? View.VISIBLE : View.GONE);
+            icon1.setVisibility(isVisible ? View.GONE : View.VISIBLE);
+        } else if (iconViewNumber==SECOND_APP_ICON) {
+            quickPic2Button.setVisibility(isVisible ? View.VISIBLE : View.GONE);
+            icon2.setVisibility(isVisible ? View.GONE : View.VISIBLE);
+        }
+    }
+
     public void updateUi() {
         if (isTabletLayout) {
 
         } else {
-            updatePackageView(package1, findViewById(R.id.package1View));
-            updatePackageView(package2, findViewById(R.id.package2View));
+            updatePackageView(package1, (ImageView) findViewById(R.id.package1View));
+            updatePackageView(package2, (ImageView) findViewById(R.id.package2View));
         }
     }
 
-    private void updatePackageView(ApplicationInfo applicationInfo, View packageView) {
-        ImageView iconImageView = (ImageView) packageView.findViewById(R.id.iconImageView);
-        TextView nameTextView = (TextView) packageView.findViewById(R.id.nameTextView);
-        TextView packageNameTextView = (TextView) packageView.findViewById(R.id.packageNameTextView);
-
-        if (applicationInfo == null) {
-            iconImageView.setImageDrawable(null);
-            nameTextView.setText("");
-            packageNameTextView.setText("");
+    private void updatePackageView(ApplicationSummary applicationSummary, ImageView packageView) {
+        if (applicationSummary == null) {
+            packageView.setImageDrawable(null);
         } else {
-            PackageManager packageManager = getPackageManager();
+            try {
+                ApplicationInfo applicationInfo = getPackageManager()
+                        .getApplicationInfo(applicationSummary.getPackageName(), PackageManager.GET_META_DATA);
+                int icon = applicationInfo.icon;
+                Resources resources = getPackageManager().getResourcesForApplication(applicationInfo);
+                packageView.setImageDrawable(resources.getDrawable(icon));
+            } catch (PackageManager.NameNotFoundException e) {
 
-            iconImageView.setImageDrawable(applicationInfo.loadIcon(packageManager));
-            nameTextView.setText(applicationInfo.loadLabel(packageManager));
-            packageNameTextView.setText(applicationInfo.packageName);
+            }
         }
     }
 }
